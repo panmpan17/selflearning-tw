@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>伴學</title>
+	<script src="html/js/jquery.min.js"></script>
+	<style>
+		h1 {
+			display: inline-block;
+		}
+		div.account {
+			position: fixed;
+			right: 10px;
+			top: 10px;
+		}
+		div.activity {
+			text-align: left;
+			background-color: #ADD;
+			width: 80%;
+			padding: 10px 15px;
+		}
+		a {
+			text-decoration: none;
+			cursor: pointer;
+			color: orange;
+		}
+	</style>
+</head>
+<body>
+	<center>
+		<h1>伴學</h1>
+	</center>
+	<div class="account">
+		{% if user %}
+			<a href="/account">
+				{{ user.username }}
+			</a>
+			/ <a onclick="logout()">登出</a>
+			{% if user.admin %}
+				/ <a href="/admin">管理員頁面</a>
+			{% endif %}
+		{% else %}
+			<a href="/login">登入</a>
+		{% endif %}
+	</div>
+	<hr>
+	{% if user %}
+		<a href="/newactivity">新活動</a>
+	{% endif %}
+	<center>
+		{% if activities %}
+			{% for activity in activities %}
+				<div class="activity">
+					<h3>{{ activity.purpose }}</h3>
+					<hr>
+					<span>
+						{{ activity.detail|safe }}
+					</span>
+					<hr>
+					{% if user %}
+						<ul>
+						{% for c in activity.contact %}
+							<li>{{ c }}</li>
+						{% endfor %}
+						</ul>
+					{% else %}
+						登入後才能看到聯絡資訊
+					{% endif %}
+					<hr>
+					發起人資訊:<br>
+					帳號: {{ activity.leader.username }} <br>
+					名字: {{ activity.leader.name }} <br>
+					<hr>
+					參加人數: {{ activity.team|length }}
+				</div>
+				<br><br>
+			{% endfor %}
+		{% endif %}
+	</center>
+	<script>
+		function logout() {
+			document.cookie = "key=";
+			location.reload();
+		}
+	</script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>管理員</title>
+	<script src="html/js/jquery.min.js"></script>
+	<style>
+		div.activity {
+			text-align: left;
+			background-color: #ADD;
+			width: 80%;
+			padding: 10px 15px;
+		}
+		a {
+			text-decoration: none;
+			cursor: pointer;
+			color: orange;
+		}
+		h3 {
+			display: inline-block;
+		}
+		button.pass {
+			position: fixed;
+			right: 11%;
+			width: 50px;
+			padding: 5px 5px;
+		}
+	</style>
+</head>
+<body>
+	<form method="post" id="approve" hidden>
+		<input name="key" type="text" id="akey">
+	</form>
+	<a href="/">回首頁</a>
+	<center>
+		{% if activities %}
+			{% for activity in activities %}
+				<div class="activity">
+					<h3>{{ activity.purpose }}</h3>
+					<button class="pass" onclick="approve('{{ activity.key }}')">
+						通過
+					</button>
+					<hr>
+					<span>
+						{{ activity.detail|safe }}
+					</span>
+					<hr>
+					<ul>
+					{% for c in activity.contact %}
+						<li>{{ c }}</li>
+					{% endfor %}
+					</ul>
+					<hr>
+					發起人資訊:<br>
+					帳號: {{ activity.leader.username }} <br>
+					信箱: {{ activity.leader.email }} <br>
+					名字: {{ activity.leader.name }} <br>
+					介紹: {{ activity.leader.intro }} <br>
+					聯絡方式:
+					<ul>
+					{% for c in activity.leader.contact %}
+						<li>{{ c }}</li>
+					{% endfor %}
+					</ul>
+				</div>
+				<br><br>
+			{% endfor %}
+		{% else %}
+			<p>沒有活動申請</p>
+		{% endif %}
+	</center>
+	<script>
+		function approve(key) {
+			$("#akey")[0].value = key
+			$("#approve")[0].submit()
+		}
+	</script>
+</body>
+</html>

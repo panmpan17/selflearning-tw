@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>登入 / 註冊</title>
+	<script src="html/js/jquery.min.js"></script>
+	<script src="html/js/signup.js"></script>
+	<style>
+		input[type=text][for=signup],
+		input[type=password][for=signup] {
+			padding: 2px 5px;
+			border: 1px solid #ccc;
+			border-radius: 4px;
+		}
+		textarea[for=signup] {
+			padding: 2px 5px;
+			border: 1px solid #ccc;
+			border-radius: 4px;
+			resize: none;
+		}
+
+		input[type=text][for=login],
+		input[type=password][for=login] {
+			font-size: 24px;
+			padding: 10px 15px;
+			border: 1px solid #ccc;
+			border-radius: 4px;
+		}
+
+		div.talkbubble {
+			display: inline-block;
+			position: absolute;
+			padding-right: 10px;
+			padding-left: 10px;
+			left: 20px;
+			height: 20px;
+			background: #ccc;
+			position: relative;
+			border-bottom-right-radius:  10px;
+			border-top-right-radius:  10px;
+		}
+		div.talkbubble:before {
+			content:"";
+			position: absolute;
+			right: 100%;
+			border-top: 10px solid transparent;
+			border-right: 10px solid #ccc;
+			border-bottom: 10px solid transparent;
+		}
+
+		div.signup {
+			background-color: #0cc;
+		}
+		div.login {
+			background-color: #cc0;
+			padding-bottom: 20px;
+			padding-top: 20px;
+		}
+		a {
+			text-decoration: none;
+			cursor: pointer;
+			color: orange;
+		}
+	</style>
+</head>
+<body>
+	<a href="/">回首頁</a>
+	<div class="signup">
+		<form id="signup" method="post">
+			<h1>註冊</h1>
+			帳號: <input for="signup" type="text" name="s_username"><div class="talkbubble">6~16 英文或數字, 例如: michael</div><br>
+			Email: <input for="signup" type="text" name="s_email"><div class="talkbubble">電子信箱: abc@gmail.com</div><br>
+			密碼: <input for="signup" id="s_password" type="password" name="s_password">
+			<input onclick="showpwd()" type="checkbox"> 顯示密碼<div class="talkbubble">6~16 英文或數字, 例如: pan123</div><br>
+			姓名: <input for="signup" type="text" name="s_name"><div class="talkbubble">請填真實姓名</div><br>
+			<br>
+			介紹: <br>
+			<textarea for="signup" id="s_intro" name="s_intro" cols="30" rows="10"></textarea>
+			<br>
+			聯絡方式: <br>
+			<textarea for="signup" id="s_contact" name="s_contact" cols="30" rows="10"></textarea>
+			<input type="text" name="type" value="signup" style="display: none">
+		</form>
+		{% if err.type == "signup" %}
+			{% if err.reason == "format" %}
+				帳號或密碼或 Email 格式不對
+			{% elif err.reason == "empty" %}
+				不要留空
+			{% elif err.reason == "repeat" %}
+				帳號重複
+			{% endif %}
+		{% endif %}
+		<br>
+		<button onclick="signup()">註冊</button>
+	</div><br>
+	<div class="login">
+		<center>
+			<h1>登入</h1>
+			<form id="login" method="post">
+				<input name="l_username" type="text" for="login"><br><br><br>
+				<input name="l_password" type="password" for="login"><br><br>
+				<input name="type" type="text" value="login" style="display: none">
+			</form>
+				{% if err.type == "login" %}
+					{% if err.reason == "password" %}
+						密碼錯誤或帳戶不存在
+					{% elif err.reason == "empty" %}
+						不要留空
+					{% endif %}
+				{% endif %}
+			<button onclick="login()">登入</button>
+		</center>
+	</div>
+</body>
+</html>
