@@ -1,0 +1,18 @@
+a {
+	text-decoration: none;
+	cursor: pointer;
+	color: orange;
+}
+
+div.account {
+	position: fixed;
+	right: 10px;
+	top: 10px;
+}
+
+div.activity {
+	text-align: left;
+	background-color: #ADD;
+	width: 80%;
+	padding: 10px 15px;
+}

@@ -2,6 +2,7 @@ import webapp2
 import os
 import jinja2
 
+from google.appengine.api import mail
 from google.appengine.ext import db
 from model import User, Activity# Chat
 
@@ -10,6 +11,21 @@ import re
 
 NAME_PASS_RE = r"[a-zA-Z0-9]{6,16}"
 EMAIL_RE = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
+
+EMAIL_VALID_HTML = """
+<body>
+<center>
+<div>
+Active Your Account: <br />
+<br />
+<a href="url">
+<button>Active My Account</button>
+</a>
+<br /><br />
+Or Use This Url:<br>
+<a href="url">url</a>
+</center></div></body>
+"""
 
 template_dir = os.path.join(os.path.dirname(__file__), "templates")
 jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir),
@@ -34,18 +50,18 @@ class Handler(webapp2.RequestHandler):
     def render(self, template, **kw):
         self.write(self.render_str(template, **kw))
 
-    def setcookie(self,name,value):
+    def set_cookie(self,name,value):
         self.response.headers.add_header(
             "Set-Cookie","%s=%s; Path=/" % (name, value)
             )
 
     def login(self, key):
-        self.setcookie("key", str(key))
+        self.set_cookie("key", str(key))
 
     def signout(self):
-        self.setcookie("key", "")
+        self.set_cookie("key", "")
 
-    def checklogin(self):
+    def check_login(self):
         key = self.request.cookies.get("key")
         try:
             u = db.get(key)
@@ -53,8 +69,20 @@ class Handler(webapp2.RequestHandler):
         except:
             return False
 
-    def needadmin(self):
-        u = self.checklogin()
+    def need_active(self):
+        u = self.check_login()
+
+        if not u:
+            self.write("Account need to be activated")
+            return False
+
+        if not u["active"]:
+            self.write("Account need to be activated")
+            return False
+        return True
+
+    def need_admin(self):
+        u = self.check_login()
 
         if not u:
             self.redirect("/")
@@ -64,12 +92,36 @@ class Handler(webapp2.RequestHandler):
             self.redirect("/")
 
     @staticmethod
+    def send_mail(recv_addr, subject, content):
+        message = mail.EmailMessage(sender="Self Learning <panmpan@gmail.com>",
+            subject=subject)
+
+        recv_name = recv_addr[:recv_addr.find("@")]
+        message.to = "{} <{}>".format(recv_name, recv_addr)
+        message.html = content
+
+        message.send()
+
+    @staticmethod
+    def send_valid_mail(key, recv_addr):
+        # EMAIL_VALID_HTML
+        url = ""
+        if bool(webapp2.local):
+            url = "http://localhost:8080"
+        else:
+            url = "http://selflearning-tw.appspot.com"
+
+        url += "/activeaccount/" + str(key)
+
+        Handler.send_mail(recv_addr, "Email", EMAIL_VALID_HTML)
+
+    @staticmethod
     def hash(text):
         return hashlib.sha256(text).hexdigest()
 
 class Index(Handler):
     def get(self):
-        user = self.checklogin()
+        user = self.check_login()
         if not user:
             self.login("")
         
@@ -91,14 +143,14 @@ class Index(Handler):
 
 class Login(Handler):
     def get(self):
-        user = self.checklogin()
+        user = self.check_login()
         if user:
             self.redirect("/")
 
         self.render("login.html", err={})
 
     def post(self):
-        user = self.checklogin()
+        user = self.check_login()
         if user:
             self.redirect("/")
 
@@ -122,15 +174,18 @@ class Login(Handler):
                 and fullmatch(EMAIL_RE, i_email)):
                 err["reason"] = "format"
             else:
+                i_password = Handler.hash(i_password)
                 u = User(
                     username=i_username,
-                    password=Handler.hash(i_password),
+                    password=i_password,
                     name=i_name,
                     email=i_email,
                     introduction=i_intro,
                     contact=i_contact
                     )
                 u.put()
+
+                Handler.send_valid_mail(u.key(), i_email)
                 self.login(u.key())
                 self.redirect("/")
                 return
@@ -156,34 +211,38 @@ class Login(Handler):
 
 class NewActivity(Handler):
     def get(self):
-        user = self.checklogin()
+        user = self.check_login()
         if not user:
             self.redirect("/")
 
-        self.render("newactivity.html")
+        actived = self.need_active()
+        if actived:
+            self.render("newactivity.html")
 
     def post(self):
-        user = self.checklogin()
+        user = self.check_login()
         if not user:
             self.redirect("/")
 
-        i_purpose = self.request.get("purpose")
-        i_contact = self.request.get("contact").split("\n")
-        i_detail = self.request.get("detail")
+        actived = self.need_active()
+        if actived:
+            i_purpose = self.request.get("purpose")
+            i_contact = self.request.get("contact").split("\n")
+            i_detail = self.request.get("detail")
 
-        a = Activity(
-            purpose=i_purpose,
-            contact=i_contact,
-            detail=i_detail,
-            leader=str(user["key"]),
-            )
+            a = Activity(
+                purpose=i_purpose,
+                contact=i_contact,
+                detail=i_detail,
+                leader=str(user["key"]),
+                )
 
-        a.put()
-        self.redirect("/")
+            a.put()
+            self.redirect("/")
 
 class Admin(Handler):
     def get(self):
-        self.needadmin()
+        self.need_admin()
         
         actvities_sql = db.GqlQuery(
             "SELECT * FROM Activity WHERE approve=False"
@@ -199,23 +258,101 @@ class Admin(Handler):
         self.render("admin.html", activities=activities)
 
     def post(self):
-        self.needadmin()
+        self.need_admin()
 
-        key = self.request.get("key")
-        a = db.get(key)
-        a.approve = True
-        a.put()
+        _type = self.request.get("type")
+        if _type == "approve":
+            key = self.request.get("key")
+            a = db.get(key)
+            a.approve = True
+            a.put()
 
-        self.redirect("/")
-        # self.write(Activity.toDict(a))
+            self.redirect("/")
+        elif _type == "dactivity":
+            key = self.request.get("akey")
+            a = db.get(key)
+            try:
+                a.delete()
+            except:
+                pass
+            self.redirect("/admin")
 
 class Account(Handler):
     def get(self):
-        u = self.checklogin()
+        u = self.check_login()
         if not u:
             self.redirect("/")
+            return
 
-        self.write(u["username"])
+        u["contact"] = "\n".join(u["contact"])
+
+        actvities_sql = db.GqlQuery(
+            "SELECT * FROM Activity WHERE leader='%s'" % u["key"]
+            )
+
+        # your_activities = []
+        # for a in actvities_sql.run():
+        #     your_activities.append(Activity.toDict(a))
+
+        your_activities = []
+        asking_activities = []
+        for a in actvities_sql.run():
+            if a.approve:
+                your_activities.append(Activity.toDict(a))
+            else:
+                asking_activities.append(Activity.toDict(a))
+
+        p = {
+            "user": u,
+            "your_activities": your_activities,
+            "asking_activities":asking_activities
+            }
+        self.render("account.html", **p)
+
+    def post(self):
+        u = self.check_login()
+        if not u:
+            self.redirect("/")
+            return
+
+        _type = self.request.get("type")
+
+        if _type == "uinfo":
+            intro = self.request.get("intro")
+            contact = self.request.get("contact")
+
+            u = db.get(u["key"])
+            u.introduction = intro
+            u.contact = contact.split("\n")
+
+            u.put()
+            self.redirect("/account")
+        elif _type == "dactivity":
+            key = self.request.get("akey")
+            a = db.get(key)
+            try:
+                a.delete()
+            except:
+                pass
+            self.redirect("/account")
+
+class ActiveAccount(Handler):
+    def get(self, key):
+        try:
+            u = db.get(key)
+            udict = User.toDict(u)
+        except:
+            u = False
+
+        if not u:
+            self.redirect("/")
+            return 
+
+        u.active = True
+        u.put()
+        self.write("Account Acctive")
+
+        bool(webapp2.local)
 
 app = webapp2.WSGIApplication([
         ("/", Index),
@@ -223,4 +360,5 @@ app = webapp2.WSGIApplication([
         ("/newactivity", NewActivity),
         ("/admin", Admin),
         ("/account", Account),
+        (r"/activeaccount/([a-zA-Z0-9-]+)", ActiveAccount),
     ], debug=True)

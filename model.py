@@ -10,6 +10,7 @@ class User(db.Model):
     introduction = db.TextProperty(required=True, indexed=False)
     contact = db.ListProperty(str, default=[], indexed=False)
     admin = db.BooleanProperty(default=False)
+    active = db.BooleanProperty(default=False)
 
     @staticmethod
     def toDict(u):
@@ -20,6 +21,7 @@ class User(db.Model):
             "intro": u.introduction,
             "contact": u.contact,
             "admin": u.admin,
+            "active": u.active,
             "key": u.key(),
             }
 

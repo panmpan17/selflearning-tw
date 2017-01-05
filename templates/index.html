@@ -4,25 +4,11 @@
 	<meta charset="UTF-8">
 	<title>伴學</title>
 	<script src="html/js/jquery.min.js"></script>
+
+	<link rel="stylesheet" href="/html/base.css">
 	<style>
 		h1 {
 			display: inline-block;
-		}
-		div.account {
-			position: fixed;
-			right: 10px;
-			top: 10px;
-		}
-		div.activity {
-			text-align: left;
-			background-color: #ADD;
-			width: 80%;
-			padding: 10px 15px;
-		}
-		a {
-			text-decoration: none;
-			cursor: pointer;
-			color: orange;
 		}
 	</style>
 </head>
@@ -71,7 +57,7 @@
 					帳號: {{ activity.leader.username }} <br>
 					名字: {{ activity.leader.name }} <br>
 					<hr>
-					參加人數: {{ activity.team|length }}
+					參加人數: {{ activity.team|length + 1 }}
 				</div>
 				<br><br>
 			{% endfor %}

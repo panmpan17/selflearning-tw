@@ -4,24 +4,21 @@
 	<meta charset="UTF-8">
 	<title>管理員</title>
 	<script src="html/js/jquery.min.js"></script>
+
+	<link rel="stylesheet" href="/html/base.css">
 	<style>
-		div.activity {
-			text-align: left;
-			background-color: #ADD;
-			width: 80%;
-			padding: 10px 15px;
-		}
-		a {
-			text-decoration: none;
-			cursor: pointer;
-			color: orange;
-		}
 		h3 {
 			display: inline-block;
 		}
 		button.pass {
-			position: fixed;
+			position: absolute;
 			right: 11%;
+			width: 50px;
+			padding: 5px 5px;
+		}
+		button.delete {
+			position: absolute;
+			right: 18%;
 			width: 50px;
 			padding: 5px 5px;
 		}
@@ -29,7 +26,12 @@
 </head>
 <body>
 	<form method="post" id="approve" hidden>
+		<input name="type" type="text" value="approve">
 		<input name="key" type="text" id="akey">
+	</form>
+	<form id="delete_activity" hidden method="post">
+		<input name="type" type="text" value="dactivity">
+		<input name="akey" type="akey" id="delete-akey">
 	</form>
 	<a href="/">回首頁</a>
 	<center>
@@ -39,6 +41,9 @@
 					<h3>{{ activity.purpose }}</h3>
 					<button class="pass" onclick="approve('{{ activity.key }}')">
 						通過
+					</button>
+					<button class="delete" onclick="delete_activity('{{ activity.key }}', '{{ activity.purpose }}')">
+						X
 					</button>
 					<hr>
 					<span>
@@ -73,6 +78,13 @@
 		function approve(key) {
 			$("#akey")[0].value = key
 			$("#approve")[0].submit()
+		}
+		function delete_activity(akey, purpose) {
+			c = confirm("你確定要刪除這個活動嗎, 這步驟無法反悔\n活動目的: " + purpose)
+			if (c) {
+				$("#delete-akey")[0].value = akey;
+				$("#delete_activity")[0].submit()
+			}
 		}
 	</script>
 </body>

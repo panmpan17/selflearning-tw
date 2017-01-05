@@ -2,9 +2,112 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>Document</title>
+	<title>Account / {{ user.username }}</title>
+	<script src="html/js/jquery.min.js"></script>
+
+	<link rel="stylesheet" href="/html/base.css">
+	<style>
+		div.account-info {
+			border: 1px solid black;
+		}
+		p {
+			margin-left: 20px;
+			padding-left: 10px;
+			border-left: 1px solid #ccf;
+			text-align: left;
+		}
+		textarea[for=signup] {
+			padding: 2px 5px;
+			border: 1px solid #ccc;
+			border-radius: 4px;
+			resize: none;
+		}
+		button.delete {
+			position: absolute;
+			right: 10%;
+		}
+	</style>
 </head>
 <body>
-	
+	<form id="delete_activity" hidden method="post">
+		<input name="type" type="text" value="dactivity">
+		<input name="akey" type="text" id="akey">
+	</form>
+	<a href="/">回首頁</a>
+	<div class="account-info">
+		帳號: {{ user.username }} <br>
+		Email: {{ user.email }} <br>
+		名子: {{ user.name }} <br>
+		介紹: <br>
+		<form method="post">
+			<input name="type" type="text" value="uinfo" hidden>
+
+			<textarea name="intro" for="signup" cols="30" rows="5" oninput="$('#save-ac-info')[0].disabled = false">{{ user.intro }}</textarea><br>
+			聯絡資料: <br>
+			<textarea name="contact" for="signup" cols="30" rows="5" oninput="$('#save-ac-info')[0].disabled = false">{{ user.contact }}</textarea><br>
+			<button id="save-ac-info" disabled>save</button>
+		</form>
+	</div>
+	<center>
+		你舉辦的活動:
+		{% if your_activities %}
+			{% for activity in your_activities %}
+				<div class="activity">
+					{{ activity.purpose }}
+					<button class="delete" onclick="delete_activity('{{ activity.key }}')">
+						X
+					</button>
+					<hr>
+					<span>
+						{{ activity.detail|safe }}
+					</span>
+					<hr>
+					<ul>
+					{% for c in activity.contact %}
+						<li>{{ c }}</li>
+					{% endfor %}
+					</ul>
+					</ul>
+				</div>
+				<br><br>
+			{% endfor %}
+		{% else %}
+			<p>你沒舉辦過任何活動</p>
+		{% endif %}
+		正在申請的活動:
+		{% if asking_activities %}
+			{% for activity in asking_activities %}
+				<div class="activity">
+					{{ activity.purpose }}
+					<button class="delete" onclick="delete_activity('{{ activity.key }}', '{{ activity.purpose }}')">
+						X
+					</button>
+					<hr>
+					<span>
+						{{ activity.detail|safe }}
+					</span>
+					<hr>
+					<ul>
+					{% for c in activity.contact %}
+						<li>{{ c }}</li>
+					{% endfor %}
+					</ul>
+					</ul>
+				</div>
+				<br><br>
+			{% endfor %}
+		{% else %}
+			<p>你沒有任何活動正在申請</p>
+		{% endif %}
+	</center>
+	<script>
+		function delete_activity(akey, purpose) {
+			c = confirm("你確定要刪除這個活動嗎, 這步驟無法反悔\n活動目的: " + purpose)
+			if (c) {
+				$("#akey")[0].value = akey;
+				$("#delete_activity")[0].submit()
+			}
+		}
+	</script>
 </body>
 </html>

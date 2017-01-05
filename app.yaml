@@ -4,6 +4,10 @@ runtime: python27
 api_version: 1
 threadsafe: yes
 
+inbound_services:
+- mail
+- mail_bounce
+
 handlers:
 - url: /favicon\.ico
   static_files: favicon.ico
